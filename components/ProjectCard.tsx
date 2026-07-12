@@ -1,0 +1,49 @@
+import Link from "next/link";
+import { Chip } from "@/components/Section";
+import type { Project } from "@/data/projects";
+
+export function ProjectCard({ project }: { project: Project }) {
+  return (
+    <article className="group relative rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent-dim hover:bg-surface-hover hover:shadow-[0_0_40px_-12px_var(--accent-dim)] sm:p-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 className="text-xl font-semibold tracking-tight sm:text-2xl">{project.name}</h3>
+        <a
+          href={project.github}
+          target="_blank"
+          rel="noreferrer"
+          className="relative z-10 font-mono text-xs text-muted transition-colors hover:text-accent"
+        >
+          GitHub ↗
+        </a>
+      </div>
+
+      <p className="mt-2 text-sm text-accent">{project.tagline}</p>
+      <p className="mt-4 leading-relaxed text-muted">{project.summary}</p>
+
+      <ul className="mt-6 space-y-2.5">
+        {project.highlights.map((highlight) => (
+          <li key={highlight} className="flex gap-3 text-sm leading-relaxed text-muted">
+            <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-accent-dim" />
+            {highlight}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-6 flex flex-wrap gap-2">
+        {project.tech.map((tech) => (
+          <Chip key={tech}>{tech}</Chip>
+        ))}
+      </div>
+
+      <Link
+        href={`/projects/${project.slug}`}
+        className="mt-7 inline-flex items-center gap-2 text-sm font-medium text-fg transition-colors group-hover:text-accent"
+      >
+        {/* stretched link: the whole card is the click target, GitHub link excepted via z-10 */}
+        <span className="absolute inset-0 rounded-xl" aria-hidden />
+        Read the case study
+        <span className="transition-transform group-hover:translate-x-1">→</span>
+      </Link>
+    </article>
+  );
+}
