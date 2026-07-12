@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     default: `${profile.name} — ${profile.title}`,
     template: `%s — ${profile.name}`,
   },
-  description: profile.summary,
+  description: profile.tagline,
   openGraph: {
     title: `${profile.name} — ${profile.title}`,
-    description: profile.summary,
+    description: profile.tagline,
     type: "website",
   },
 };

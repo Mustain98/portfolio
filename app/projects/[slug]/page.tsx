@@ -112,18 +112,7 @@ export default async function ProjectPage({ params }: Params) {
         </div>
       </Block>
 
-      <Block index="04" title="Why it's interesting">
-        <ul className="max-w-3xl space-y-5">
-          {project.whyInteresting.map((point) => (
-            <li key={point} className="flex gap-4 leading-relaxed text-muted">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-              {point}
-            </li>
-          ))}
-        </ul>
-      </Block>
-
-      <Block index="05" title="Stack">
+      <Block index="04" title="Stack">
         <dl className="divide-y divide-border border-y border-border">
           {project.stack.map((row) => (
             <div key={row.layer} className="grid gap-1 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">
@@ -135,7 +124,7 @@ export default async function ProjectPage({ params }: Params) {
       </Block>
 
       {project.apiSurface && (
-        <Block index="06" title="API surface">
+        <Block index="05" title="API surface">
           <dl className="divide-y divide-border border-y border-border">
             {project.apiSurface.map((row) => (
               <div key={row.area} className="grid gap-2 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">

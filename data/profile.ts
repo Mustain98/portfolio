@@ -1,12 +1,10 @@
 export const profile = {
   name: "Mustain Billah Taj",
   title: "Software Engineer",
-  thesis: ["Backend", "Distributed Systems", "AI"],
-  degree: "BSc in Software Engineering",
-  university: "Islamic University of Technology (IUT)",
   location: "Dhaka, Bangladesh",
-  summary:
-    "Software Engineering undergraduate with interests in backend engineering, distributed systems, AI applications, and scalable system design. Experienced in developing REST APIs, real-time applications, LLM-powered systems, and PostgreSQL-based backend services using Python and FastAPI.",
+  // the one-line headline under the name; also the site's meta description
+  tagline:
+    "BSc in SWE at IUT (3rd year)  |  Backend Development & AI/ML Integrated Systems",
   email: "mustaintaj@iut-dhaka.edu",
   phone: "+8801734090654",
   linkedin: "https://www.linkedin.com/in/mustain-billah-taj-958578228/",

@@ -14,7 +14,7 @@ export default function Home() {
         id="projects"
         index="01"
         title="Projects"
-        subtitle="Three systems built end to end. Each case study covers the architecture, the design decisions, and the parts that were genuinely hard."
+        subtitle="Three things I built end to end. Each one has a write-up covering how it's put together and the parts that gave me trouble."
       >
         <div className="grid gap-6">
           {projects.map((project) => (
@@ -31,7 +31,7 @@ export default function Home() {
         id="contact"
         index="03"
         title="Get in touch"
-        subtitle="Open to backend, distributed systems, and AI engineering roles."
+        subtitle="I'm looking for backend, distributed systems, and AI engineering roles. Happy to hear about anything interesting."
       >
         <Contact />
       </Section>

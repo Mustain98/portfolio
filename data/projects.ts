@@ -10,7 +10,6 @@ export type Project = {
   problem: string;
   architecture: { caption: string };
   features: { title: string; body: string }[];
-  whyInteresting: string[];
   stack: { layer: string; tech: string }[];
   apiSurface?: { area: string; endpoints: string }[];
 };
@@ -19,9 +18,9 @@ export const projects: Project[] = [
   {
     slug: "stream",
     name: "Stream",
-    tagline: "Pay-per-view live streaming on a WebRTC SFU built from scratch.",
+    tagline: "A pay-per-view live streaming platform on a WebRTC server I wrote myself.",
     summary:
-      "A full-stack live-streaming platform where creators broadcast in real time over WebRTC and get paid for it. Viewers sample paid streams through timed free previews and unlock full access with Stripe checkout, while broadcasters watch earnings update live and receive automatic payouts when the stream ends.",
+      "Creators go live over WebRTC and get paid for it. Viewers can watch free streams, sample paid ones through a timed preview, and pay with Stripe to see the rest. Broadcasters see their earnings tick up while they stream, and the money is paid out to them automatically once the stream ends.",
     tech: [
       "FastAPI",
       "aiortc",
@@ -33,56 +32,47 @@ export const projects: Project[] = [
       "Docker",
     ],
     highlights: [
-      "Real-time streaming platform supporting free and pay-per-view broadcasts with creator monetization and automated Stripe payouts.",
-      "Custom WebRTC Selective Forwarding Unit (SFU) using aiortc, implementing signaling, media routing, room management, viewer authentication, and preview enforcement without third-party media servers.",
-      "Distributed architecture separating business logic from media processing through secure ticket-based authentication, with real-time chat, moderation, and live earnings updates.",
+      "The media server is my own code, not a wrapper around Mediasoup or LiveKit. It handles signaling, forwarding video between peers, rooms, and who's allowed in.",
+      "Payments run through Stripe end to end: checkout, webhooks, the platform's cut, payouts to the creator, and automatic refunds if a stream ends too early.",
+      "Business logic and video live in separate services and only meet through a short-lived ticket, so the media server never sees a password.",
     ],
     // TODO: verify repo name
     github: "https://github.com/Mustain98/Stream",
     problem:
-      "Most streaming demos are a thin wrapper around Mediasoup, LiveKit, or Agora — the interesting part is somebody else's binary. Stream takes the opposite bet: the media server is first-party Python. Peer management, track forwarding, room lifecycle, signaling, and preview timers are all original aiortc code, which means the business layer and the media layer can be cleanly separated and a short-lived ticket can be the only bridge between them.",
+      "Most streaming projects are a thin layer over Mediasoup, LiveKit, or Agora, so the interesting part is someone else's code. I wanted to understand how video actually gets from one browser to a hundred others, so I built the media server myself with aiortc. Everything in it is mine: the peer connections, forwarding tracks between them, room lifecycle, signaling, and the preview timers. Doing it that way also meant I could keep payments and passwords completely out of the media server and let a short-lived ticket be the only thing connecting the two halves.",
     architecture: {
       caption:
-        "Three services, one database. The media server knows nothing about passwords or payments; the business backend never touches an RTP packet.",
+        "Three services and one database. The media server doesn't know anything about passwords or payments, and the business backend never touches a video packet.",
     },
     features: [
       {
-        title: "Real-time broadcasting",
-        body: "One-to-many live video and audio through a hand-rolled SFU: a single publisher's tracks are selectively forwarded to any number of subscribers. WebSocket signaling handles the full WebRTC lifecycle — offer/answer negotiation, ICE candidate exchange, clean peer teardown. Broadcasters can pause and resume mid-stream, and a publisher heartbeat lets a background cleanup loop reap streams whose broadcaster vanished.",
+        title: "Live broadcasting",
+        body: "One broadcaster's video and audio gets forwarded out to however many people are watching. The WebSocket connection handles the whole WebRTC handshake: the offer and answer, exchanging ICE candidates, and cleaning up when someone leaves. Broadcasters can pause and resume, and if one disappears without ending the stream properly, a heartbeat check notices and cleans it up.",
       },
       {
-        title: "Ticket-based access",
-        body: "Viewers never reach the media server with raw credentials. The backend authenticates the user, verifies their right to watch, and issues a short-lived single-purpose ticket. The SFU validates that ticket against the backend over a shared-secret internal API before admitting the peer.",
+        title: "Tickets instead of credentials",
+        body: "Viewers never talk to the media server with their real credentials. The backend checks who they are and whether they're allowed to watch, then hands them a short-lived ticket. The media server checks that ticket with the backend before letting them into the room.",
       },
       {
-        title: "Monetization with Stripe",
-        body: "Broadcasters mark a stream free or paid, set price, currency, and an optional free-preview window. Paid access goes through Stripe Checkout, confirmed by webhooks with a reconciliation endpoint as a safety net for missed events. A configurable platform fee is split out of every transaction.",
+        title: "Paying for a stream",
+        body: "A broadcaster sets a price, a currency, and optionally a free preview window. Payment goes through Stripe Checkout and is confirmed by a webhook, with a reconcile endpoint to fall back on if a webhook goes missing. Every Stripe call carries an idempotency key, and the database has a unique index that makes it impossible to charge someone twice for the same stream.",
       },
       {
         title: "Previews that actually end",
-        body: "The free preview is not a client-side timer someone can bypass — the SFU itself enforces it. When a preview viewer's time is up the media server cuts the connection and the frontend swaps in a payment-required overlay leading straight to checkout.",
+        body: "The free preview isn't a countdown in the browser that anyone could edit around. The media server holds the timer, and when it runs out it drops the connection. The page then swaps in an overlay pointing you at checkout.",
       },
       {
-        title: "Settlement, payouts & refunds",
-        body: "Broadcasters onboard to Stripe Connect from their dashboard. When a stream ends, a settlement pass runs: if the stream met its minimum duration, each paid viewer's share minus the platform fee is transferred to the connected account. If it ended too early, viewers are automatically refunded — no support tickets, no manual intervention.",
+        title: "Payouts and refunds",
+        body: "Broadcasters connect their own Stripe account from the dashboard. When a stream ends, each viewer's payment (minus the platform fee) is transferred to the broadcaster. If the stream ended too early to count, everyone who paid gets refunded automatically instead. Nobody has to file a support ticket.",
       },
       {
-        title: "Live earnings & moderation",
-        body: "Every confirmed payment is relayed from the backend through the SFU to the broadcaster over the existing WebSocket, mid-stream. Broadcasters can block, unblock, and kick viewers; blocks are enforced at both layers — the SFU ejects the user immediately and the backend refuses to issue them a new ticket.",
+        title: "Chat, moderation, earnings",
+        body: "Chat and @mentions run over the same WebSocket the video signaling uses, so there's no extra infrastructure for it. Broadcasters can block or kick viewers, and a block is enforced in both places: the media server removes them from the room immediately, and the backend won't issue them another ticket. Confirmed payments are pushed to the broadcaster mid-stream so the earnings panel updates live.",
       },
-    ],
-    whyInteresting: [
-      "The hard part is hand-built. The SFU — peer management, track forwarding, room lifecycle, preview timers — is original aiortc code you can read end to end, not a wrapper around Mediasoup or LiveKit.",
-      "Money is handled like production money: idempotency keys on every Stripe call, webhook replay protection, a partial unique index guaranteeing at most one paid transaction per viewer per stream, a reconciliation escape hatch, split fees, automated Connect payouts, and automatic refunds when a broadcaster under-delivers.",
-      "The preview cutoff lives in the media server, so it cannot be bypassed by patching the client — the security boundary is drawn where the packets actually flow.",
-      "A full transaction state machine (pending → checkout_created → paid → transferred / refunded) tracks failure states at every step.",
     ],
     stack: [
       { layer: "Frontend", tech: "Next.js 15, React 19, TypeScript" },
-      {
-        layer: "Main Backend",
-        tech: "FastAPI, SQLModel, PostgreSQL, Stripe",
-      },
+      { layer: "Main Backend", tech: "FastAPI, SQLModel, PostgreSQL, Stripe" },
       { layer: "Stream Server", tech: "FastAPI, aiortc, WebSockets" },
       { layer: "Auth", tech: "JWT, Argon2/bcrypt password hashing" },
       { layer: "Infra", tech: "Docker Compose (Postgres 16, Stripe CLI)" },
@@ -99,8 +89,7 @@ export const projects: Project[] = [
       },
       {
         area: "Access",
-        endpoints:
-          "POST /ticket/{id} · GET /{id}/access · PATCH /{id}/access-settings",
+        endpoints: "POST /ticket/{id} · GET /{id}/access · PATCH /{id}/access-settings",
       },
       {
         area: "Payments",
@@ -109,8 +98,7 @@ export const projects: Project[] = [
       },
       {
         area: "Earnings",
-        endpoints:
-          "GET /{id}/earnings · GET /earnings/history · GET /spend/history",
+        endpoints: "GET /{id}/earnings · GET /earnings/history · GET /spend/history",
       },
       {
         area: "Moderation",
@@ -123,9 +111,9 @@ export const projects: Project[] = [
   {
     slug: "j-buddy",
     name: "J_Buddy",
-    tagline: "An AI job copilot that reads your CV and hunts for you around the clock.",
+    tagline: "A job-hunting assistant that reads your CV and does the searching for you.",
     summary:
-      "Give it your CV once and it decides what roles suit you, goes out and fetches real live listings, scores every one against your profile from 0–100, and lets you simply talk to it — \"find me an ML internship in Dhaka\", \"what am I missing for this job?\", \"write me a cover letter\" — like a career coach who has actually read your CV.",
+      "You upload your CV once. After that it works out which roles suit you, goes and finds real listings, scores each one against your background, and you can just talk to it: find me an ML internship in Dhaka, what am I missing for this job, write me a cover letter.",
     tech: [
       "FastAPI",
       "LangChain",
@@ -137,57 +125,51 @@ export const projects: Project[] = [
       "Next.js",
     ],
     highlights: [
-      "AI-powered career assistant that aggregates live job listings and delivers personalized recommendations based on user preferences.",
-      "Retrieval-Augmented Generation (RAG) chatbot for CV analysis, interview preparation, job-specific guidance, and career-related queries.",
-      "Intelligent career planning features including roadmap generation, learning goal recommendations, and end-to-end application tracking within a unified platform.",
+      "Pulls in real job listings and scores each one against your CV, so the suggestions are ranked by how well they actually fit you.",
+      "A chatbot that answers from your CV and the job data rather than making things up, and can search live listings mid-conversation.",
+      "Handles the rest of the hunt too: what you're missing for a role, a learning plan to get there, cover letters, and a board to track applications.",
     ],
     // TODO: verify repo name
     github: "https://github.com/Mustain98/J_Buddy",
     problem:
-      "Job hunting is a matching problem buried under a search problem. You have to guess the right keywords, read hundreds of postings, and judge your own fit for each one — repeatedly, forever. J_Buddy inverts it: the CV becomes the query. The system writes its own searches, fetches real listings in the background, ranks them against your actual skills and history, and exposes the whole thing through a chat agent that is structurally forbidden from inventing experience you don't have.",
+      "Looking for a job means guessing the right search terms, reading through hundreds of postings, and trying to judge honestly whether you're a fit for each one. It's slow and you have to keep doing it. I wanted to flip that around so the CV does the searching: the system writes its own queries from what's in it, pulls in listings in the background, and ranks them against your real skills. The other half of the problem is trust. An assistant that cheerfully tells you you're qualified for anything is useless, so this one only answers from what your CV actually says.",
     architecture: {
       caption:
-        "The API never does slow work itself. It hands fetching, pool rebuilds, and the nightly cleanup to an arq worker, which is why the suggestions feed stays snappy while hundreds of listings are pulled in the background.",
+        "The API doesn't do any slow work itself. Fetching listings, rebuilding the ranked pool, and the nightly cleanup all get handed to a background worker, which is what keeps the feed quick to load.",
     },
     features: [
       {
-        title: "It reads your CV properly",
-        body: "Upload a PDF or Word CV and an LLM reads it the way a human would, organizing it into skills, work experience, projects, education, and certifications. No forms to fill.",
+        title: "Reading your CV",
+        body: "Upload a PDF or Word file and an LLM pulls it apart into skills, work experience, projects, education, and certifications. There are no forms to fill in.",
       },
       {
         title: "It writes its own searches",
-        body: "From your CV it generates a ranked list of job queries (\"Python backend developer\", \"ML intern\", …) so you never have to guess keywords. Your own searches teach it what you actually want, and once enough pile up it rethinks the whole list.",
+        body: "It generates its own list of job queries from your CV, like \"Python backend developer\" or \"ML intern\", so you don't have to guess keywords. When you search for something yourself it takes note, and once you've done that enough times it reconsiders the whole list.",
       },
       {
-        title: "Every job scored 0–100 against you",
-        body: "Half the score is hard evidence — how many of your real skills and past roles literally appear in the posting. The other half is meaning — how similar the job is to your profile as a whole, even when the wording differs. Every score ships with a human-readable reason.",
+        title: "A fit score for every job",
+        body: "Each job gets a score out of 100. Half of it comes from counting how many of your actual skills and past roles show up in the posting. The other half compares the meaning of the whole posting against your profile, which catches good matches that happen to use different words. Each score comes with a sentence explaining it.",
       },
       {
-        title: "A grounded chat agent",
-        body: "The assistant knows your CV and answers from it. It can search live jobs mid-conversation, recall jobs discussed earlier, and report your fit for a specific role — and it is instructed never to invent skills or experience you don't have. If the CV doesn't support a claim, it says so.",
+        title: "Chat that stays honest",
+        body: "The assistant has your CV and answers from it. It can search live listings in the middle of a conversation, remember jobs you talked about earlier, and tell you your fit for a specific role. It's told never to claim skills or experience you don't have, so if your CV doesn't back something up, it says so.",
       },
       {
-        title: "Prepare, don't just apply",
-        body: "Gap analysis lists the requirements you meet and the ones you don't. Learning roadmaps are phased plans with timeframes that deliberately exclude what you already know, with tickable goals. Cover letters are drafted from CV-supported facts only, and refine in place when you say \"make it shorter, add Docker\".",
+        title: "Getting ready, not just applying",
+        body: "Gap analysis shows what a job asks for that you already have and what you don't. Roadmaps are step-by-step learning plans split into phases, skipping anything you already know, and you can tick goals off as you go. Cover letters are written from your real experience, and if you say \"make it shorter, mention Docker\", it edits the same letter rather than making a new one.",
       },
       {
-        title: "A kanban board that never loses a job",
-        body: "Jobs you commit to land on a personal board — saved → applied → accepted / rejected. Jobs you merely glance at don't clutter it. A daily cleanup discards stale listings and re-runs the searches that found them, but anything on your board is kept forever, even if the original posting disappears from the internet.",
+        title: "A board for what you're chasing",
+        body: "Jobs you actually commit to move onto a board: saved, applied, then accepted or rejected. Jobs you only glanced at don't clutter it up. Listings go stale after a week and get cleared out, but anything on your board stays, even if the original posting is long gone.",
       },
-    ],
-    whyInteresting: [
-      "The fit score is deliberately hybrid: lexical evidence catches literal skill overlap, embedding similarity catches jobs that describe your profile in completely different words. Neither alone is enough.",
-      "Grounding is architectural, not a prompt suffix. The agent uses tools to look things up instead of guessing, and structured outputs (roadmaps, letters, gap reports) are generated into strict templates so they stay honest and well-formed.",
-      "Every CV section, job, and chat message is embedded into pgvector, turning \"similar in meaning\" into \"close together\" — a map where related texts sit near each other.",
-      "Redis does double duty: it holds the ranked suggestion pool for fast page-by-page reads and serves as the queue where the API leaves work for the worker.",
     ],
     stack: [
       { layer: "API", tech: "FastAPI (Python 3.13)" },
-      { layer: "Database", tech: "PostgreSQL + pgvector — records and the meaning map" },
-      { layer: "Cache & queue", tech: "Redis (Upstash) + arq background worker" },
-      { layer: "LLM", tech: "Groq (Llama 3.3 70B) — CV parsing, query generation, chat agent" },
+      { layer: "Database", tech: "PostgreSQL + pgvector, for both records and embeddings" },
+      { layer: "Cache & queue", tech: "Redis (Upstash) with an arq background worker" },
+      { layer: "LLM", tech: "Groq (Llama 3.3 70B) for CV parsing, query generation, and chat" },
       { layer: "Embeddings", tech: "Jina (jina-embeddings-v3)" },
-      { layer: "Job source", tech: "JSearch (RapidAPI), rotated API keys" },
+      { layer: "Job source", tech: "JSearch (RapidAPI), with rotated API keys" },
       { layer: "Auth", tech: "JWT" },
     ],
     apiSurface: [
@@ -224,9 +206,9 @@ export const projects: Project[] = [
   {
     slug: "health-hive",
     name: "Health Hive",
-    tagline: "AI health coaching where the AI drafts and the human decides.",
+    tagline: "A health platform where the AI writes the plan and a person decides on it.",
     summary:
-      "Four deployable apps over one database: a conversational AI coach that drafts your milestone, habits, and nutrition targets; a meal-planning engine that turns them into exact daily menus; a marketplace of verified human consultants with live video; and a daily accountability loop. When the AI detects a risky goal, it doesn't guess — it refers you to a human.",
+      "A coach you talk to that builds you a plan: a goal, daily habits, calorie targets, and a weekly meal structure. A meal engine turns that into actual daily menus. And when something looks risky, it stops and points you to a real nutritionist or doctor instead of guessing.",
     tech: [
       "FastAPI",
       "LangChain",
@@ -238,50 +220,43 @@ export const projects: Project[] = [
       "Next.js",
     ],
     highlights: [
-      "AI-driven health platform that generates personalized wellness plans, meal plans, and health milestones from user goals, medical conditions, and body metrics.",
-      "LLM-powered coaching and semantic retrieval workflows using LangChain and pgvector, enabling context-aware health guidance while incorporating human review for safety-critical decisions.",
-      "Integrated verified consultant onboarding, appointment scheduling, real-time video consultations with Agora, follow-up sessions, and progress tracking into a unified healthcare ecosystem.",
+      "Builds you a plan from your goal, your body metrics, and any medical conditions: habits, calorie targets, and daily menus.",
+      "The AI only ever writes a draft. Nothing takes effect until you activate it, and risky goals get refused and sent to a real professional.",
+      "Verified nutritionists and doctors are part of the product: book them, chat, and meet over video, with follow-ups afterwards.",
     ],
     // TODO: verify repo name
-    github: "https://github.com/Mustain98/Health-Hive",
+    github: "https://github.com/Mustain98/HealthHive",
     problem:
-      "Most health apps solve one slice. A calorie counter doesn't know your goal; a meal planner doesn't know your medical conditions; a telehealth app doesn't know what you ate this week. Users stitch together four apps that never talk to each other and quit all of them. Health Hive closes the loop — and because health advice can hurt people, it is built so that the AI never has the final word.",
+      "Health apps each solve one piece of the problem. Your calorie counter doesn't know your goal, your meal planner doesn't know about your medical conditions, and your telehealth app has no idea what you ate this week. You end up juggling four apps that don't talk to each other, and eventually you drop all of them. This one keeps everything in one place. The harder question was safety: bad health advice can genuinely hurt someone, so I built it so the AI can suggest but never decide. Nothing it writes takes effect until you look at it and turn it on, and anything that looks dangerous gets refused and handed to a real professional.",
     architecture: {
       caption:
-        "Two APIs share one Postgres database and the same JWTs. The core backend owns the schema — migrations run there and only there; the admin API only reads and writes existing tables.",
+        "Two APIs on one database, sharing the same login tokens. The core backend owns the schema and is the only place migrations run; the admin API just reads and writes tables that already exist.",
     },
     features: [
       {
-        title: "AI plan-setup coach",
-        body: "A streaming, tool-using chatbot that behaves like a real coach: it analyzes, explains its rationale, and discusses before writing anything, persisting changes only on explicit confirmation. Instead of dumping your profile into every prompt, the LLM calls tools (get_health_data, get_current_setup, …) only when it needs them — so general questions never touch your PII.",
+        title: "The setup coach",
+        body: "A chatbot that acts like a coach instead of a form. It explains its reasoning and talks things through before it writes anything down, and it only saves when you say yes. It also pulls your health data with tools only when it actually needs it, so an ordinary question never drags your medical history into the prompt.",
       },
       {
-        title: "Chat-driven CRUD with memory",
-        body: "\"Change my pushups to squats\" calls update_daily_goal; \"I want to bulk instead\" recomputes your TDEE-derived nutrition target and confirms. Sessions are summarized on close, so the coach can recall past conversations or reference a specific transcript.",
+        title: "Changing things by talking",
+        body: "\"Swap my pushups for squats\" updates the goal. \"I want to bulk instead\" recalculates your calorie target and asks you to confirm. Goals, targets, and meal structure can all be created, edited, or deleted from the chat. Sessions get summarized when they close, so the coach can look back at what you discussed before.",
       },
       {
-        title: "Hybrid meal-plan generation",
-        body: "The LLM generates per-slot constraints — macro splits, composition rules, required labels, condition-driven nutrient limits, and a natural-language retrieval query. That query is embedded via Jina and run through pgvector semantic search over an AI-enriched meal database. Then a deterministic assembler picks combos that actually hit the numbers, with a full fallback so generation never hard-fails, even if the LLM does.",
+        title: "Building the meal plan",
+        body: "The LLM works out the constraints for each meal slot: how to split the macros, what goes in a main versus a side, which labels are needed, and any limits your conditions imply, like capping sodium. That gets turned into an embedding and searched against the meal database, and then plain deterministic code picks the combination that actually hits the numbers. If the LLM fails, there's a fallback path, so generation never dies outright.",
       },
       {
-        title: "A recurring template, not a calendar",
-        body: "A meal plan is a Mon–Sun template — days are weekdays, never dates. Regenerating days that are already planned doesn't silently clobber them: the overlap comes back as a 409 listing the conflicting meal slots, and you choose per-slot which to overwrite. Everything you don't pick is kept.",
+        title: "A week, not a calendar",
+        body: "The meal plan is a Monday-to-Sunday template rather than specific dates. If you regenerate days that are already planned, it won't quietly overwrite them; it comes back and tells you which meals would be replaced, and you pick which ones you actually want redone.",
       },
       {
-        title: "Consultant marketplace & booking",
-        body: "A deliberate domain distinction runs through booking: a request is a pending knock with no chat; a consultation chat exists only once the consultant replies; a room exists only once a time proposal is accepted. Accepted proposals book an appointment and create a live Agora video session, with separate follow-up rooms for post-session messaging.",
+        title: "Nothing goes live on its own",
+        body: "Everything the AI produces is saved as an inactive draft until you review and activate it, and only one plan can be active at a time, which the database enforces with a unique index rather than trusting the code to remember. The risk check sits in the service layer, so it runs whether the request came from the chatbot, the generator, or someone editing by hand.",
       },
       {
-        title: "Daily accountability",
-        body: "Goal logging, calories in/out with a live deficit, streaks, charts, and notifications — computed on the client's local date, so there are no server-timezone streak bugs. The coach can read your progress and adjust goals through tools, on your confirmation.",
+        title: "Booking a real person",
+        body: "Consultants get verified by an admin before they show up. You send a request describing your issue; if they reply, that opens a chat, and either of you can propose a time. Accepting a time books the appointment and opens a video room. Afterwards there's a separate follow-up room for messaging, kept apart from the booking chat.",
       },
-    ],
-    whyInteresting: [
-      "AI drafts, humans activate. Every AI-generated plan is created inactive; generation and activation are always separate steps, and exactly one plan can be active per user — enforced by partial unique indexes at the database level, not by application convention.",
-      "The risk check lives in the service layer, so is_risky() runs on every activation path — manual CRUD, chatbot, and generation alike. There is no entry point that can sneak a dangerous goal past it.",
-      "LLM output is treated as untrusted input: finalized plans are parsed against strict Pydantic schemas with numeric bounds before the risk check even runs, and rejected outright if malformed or out of range.",
-      "LLM thinks, code decides. Creative constraint generation is the model's job; hitting the macros is deterministic code's job — and there's always a fallback.",
-      "Groq keys are rotated across a pool: each request starts on the next key, so a rate-limited key fails over to the preferred model on another key before ever degrading to the fallback model.",
     ],
     stack: [
       {
@@ -291,14 +266,14 @@ export const projects: Project[] = [
       { layer: "API", tech: "FastAPI, SQLModel/SQLAlchemy, Pydantic, Alembic" },
       {
         layer: "Auth",
-        tech: "JWT (python-jose) + Argon2, role-based guards (user / consultant / admin)",
+        tech: "JWT (python-jose) + Argon2, with user / consultant / admin roles",
       },
       {
         layer: "AI",
-        tech: "LangChain + Groq (llama-3.3-70b-versatile, gpt-oss-120b fallback), structured outputs with strict Pydantic validation",
+        tech: "LangChain + Groq (llama-3.3-70b-versatile, gpt-oss-120b as fallback), rotated across up to three keys",
       },
       { layer: "Vector search", tech: "pgvector + Jina embeddings (1024-dim)" },
-      { layer: "Realtime", tech: "Agora RTC video, Server-Sent Events for streaming chat" },
+      { layer: "Realtime", tech: "Agora video, Server-Sent Events for streaming chat" },
     ],
     apiSurface: [
       {
@@ -314,9 +289,12 @@ export const projects: Project[] = [
       {
         area: "Consultations",
         endpoints:
-          "POST /consultations/requests · consultant reply|decline · propose|accept time slot",
+          "POST /consultations/requests · consultant reply|decline · propose|accept a time slot",
       },
-      { area: "Plans", endpoints: "Draft plan · activate (as a unit) · one active per user" },
+      {
+        area: "Plans",
+        endpoints: "Draft plan · activate as a unit · one active plan per user",
+      },
     ],
   },
 ];
