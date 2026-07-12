@@ -243,7 +243,7 @@ export const projects: Project[] = [
       "Integrated verified consultant onboarding, appointment scheduling, real-time video consultations with Agora, follow-up sessions, and progress tracking into a unified healthcare ecosystem.",
     ],
     // TODO: verify repo name
-    github: "https://github.com/Mustain98/HealthHive",
+    github: "https://github.com/Mustain98/Health-Hive",
     problem:
       "Most health apps solve one slice. A calorie counter doesn't know your goal; a meal planner doesn't know your medical conditions; a telehealth app doesn't know what you ate this week. Users stitch together four apps that never talk to each other and quit all of them. Health Hive closes the loop — and because health advice can hurt people, it is built so that the AI never has the final word.",
     architecture: {
