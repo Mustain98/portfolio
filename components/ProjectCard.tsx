@@ -6,15 +6,37 @@ export function ProjectCard({ project }: { project: Project }) {
   return (
     <article className="group relative rounded-xl border border-border bg-surface p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent-dim hover:bg-surface-hover hover:shadow-[0_0_40px_-12px_var(--accent-dim)] sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h3 className="text-xl font-semibold tracking-tight sm:text-2xl">{project.name}</h3>
-        <a
-          href={project.github}
-          target="_blank"
-          rel="noreferrer"
-          className="relative z-10 font-mono text-xs text-muted transition-colors hover:text-accent"
-        >
-          GitHub ↗
-        </a>
+        <h3 className="flex items-center gap-3 text-xl font-semibold tracking-tight sm:text-2xl">
+          {project.name}
+          {project.demo && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-dim bg-accent-dim/10 px-2.5 py-1 font-mono text-[10px] font-normal text-accent">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              live
+            </span>
+          )}
+        </h3>
+
+        {/* z-10 keeps these above the card's stretched link */}
+        <div className="relative z-10 flex items-center gap-4 font-mono text-xs">
+          {project.demo && (
+            <a
+              href={project.demo}
+              target="_blank"
+              rel="noreferrer"
+              className="text-muted transition-colors hover:text-accent"
+            >
+              Live site ↗
+            </a>
+          )}
+          <a
+            href={project.github}
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted transition-colors hover:text-accent"
+          >
+            GitHub ↗
+          </a>
+        </div>
       </div>
 
       <p className="mt-2 text-sm text-accent">{project.tagline}</p>

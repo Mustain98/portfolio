@@ -36,8 +36,7 @@ export const projects: Project[] = [
       "Payments run through Stripe end to end: checkout, webhooks, the platform's cut, payouts to the creator, and automatic refunds if a stream ends too early.",
       "Business logic and video live in separate services and only meet through a short-lived ticket, so the media server never sees a password.",
     ],
-    // TODO: verify repo name
-    github: "https://github.com/Mustain98/Stream",
+    github: "https://github.com/Mustain98/stream",
     problem:
       "Most streaming projects are a thin layer over Mediasoup, LiveKit, or Agora, so the interesting part is someone else's code. I wanted to understand how video actually gets from one browser to a hundred others, so I built the media server myself with aiortc. Everything in it is mine: the peer connections, forwarding tracks between them, room lifecycle, signaling, and the preview timers. Doing it that way also meant I could keep payments and passwords completely out of the media server and let a short-lived ticket be the only thing connecting the two halves.",
     architecture: {
@@ -129,8 +128,7 @@ export const projects: Project[] = [
       "A chatbot that answers from your CV and the job data rather than making things up, and can search live listings mid-conversation.",
       "Handles the rest of the hunt too: what you're missing for a role, a learning plan to get there, cover letters, and a board to track applications.",
     ],
-    // TODO: verify repo name
-    github: "https://github.com/Mustain98/J_Buddy",
+    github: "https://github.com/Mustain98/J_buddy",
     problem:
       "Looking for a job means guessing the right search terms, reading through hundreds of postings, and trying to judge honestly whether you're a fit for each one. It's slow and you have to keep doing it. I wanted to flip that around so the CV does the searching: the system writes its own queries from what's in it, pulls in listings in the background, and ranks them against your real skills. The other half of the problem is trust. An assistant that cheerfully tells you you're qualified for anything is useless, so this one only answers from what your CV actually says.",
     architecture: {
@@ -224,8 +222,8 @@ export const projects: Project[] = [
       "The AI only ever writes a draft. Nothing takes effect until you activate it, and risky goals get refused and sent to a real professional.",
       "Verified nutritionists and doctors are part of the product: book them, chat, and meet over video, with follow-ups afterwards.",
     ],
-    // TODO: verify repo name
-    github: "https://github.com/Mustain98/HealthHive",
+    github: "https://github.com/Mustain98/Health-Hive",
+    demo: "https://health-hive-ten.vercel.app",
     problem:
       "Health apps each solve one piece of the problem. Your calorie counter doesn't know your goal, your meal planner doesn't know about your medical conditions, and your telehealth app has no idea what you ate this week. You end up juggling four apps that don't talk to each other, and eventually you drop all of them. This one keeps everything in one place. The harder question was safety: bad health advice can genuinely hurt someone, so I built it so the AI can suggest but never decide. Nothing it writes takes effect until you look at it and turn it on, and anything that looks dangerous gets refused and handed to a real professional.",
     architecture: {
