@@ -10,6 +10,7 @@ export const profile = {
   linkedin: "https://www.linkedin.com/in/mustain-billah-taj-958578228/",
   github: "https://github.com/Mustain98",
   resume: "/CV.pdf",
+  avatar: "/profile.jpeg",
 } as const;
 
 export const skillGroups: { label: string; skills: string[] }[] = [

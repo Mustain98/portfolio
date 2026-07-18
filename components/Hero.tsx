@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { profile } from "@/data/profile";
 
 const actions = [
@@ -16,19 +17,38 @@ export function Hero() {
         className="pointer-events-none absolute -top-10 left-0 h-72 w-72 rounded-full bg-accent/10 blur-[110px]"
       />
 
-      <h1 className="relative text-4xl font-semibold tracking-tight sm:text-6xl">
-        {profile.name}
-      </h1>
+      <div className="relative flex flex-col items-start gap-8 sm:flex-row sm:items-center sm:gap-10">
+        <div className="relative shrink-0">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-10 -translate-x-3 translate-y-3 rounded-full bg-accent/15 blur-xl"
+          />
+          <Image
+            src={profile.avatar}
+            alt={profile.name}
+            width={176}
+            height={176}
+            priority
+            className="h-32 w-32 rounded-full border border-border object-cover object-top sm:h-40 sm:w-40"
+          />
+        </div>
 
-      {/* the tagline is one string in the data; the pipes become the visual rhythm */}
-      <p className="relative mt-6 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm leading-relaxed sm:text-base">
-        {profile.tagline.split("|").map((part, i) => (
-          <span key={part} className="flex items-center gap-3">
-            {i > 0 && <span className="text-accent">|</span>}
-            <span className={i === 0 ? "text-muted" : "text-fg"}>{part.trim()}</span>
-          </span>
-        ))}
-      </p>
+        <div className="flex-1">
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+            {profile.name}
+          </h1>
+
+          {/* the tagline is one string in the data; the pipes become the visual rhythm */}
+          <p className="mt-6 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm leading-relaxed sm:text-base">
+            {profile.tagline.split("|").map((part, i) => (
+              <span key={part} className="flex items-center gap-3">
+                {i > 0 && <span className="text-accent">|</span>}
+                <span className={i === 0 ? "text-muted" : "text-fg"}>{part.trim()}</span>
+              </span>
+            ))}
+          </p>
+        </div>
+      </div>
 
       <div className="relative mt-10 flex flex-wrap gap-3">
         {actions.map((action) => (
