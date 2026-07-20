@@ -8,7 +8,7 @@ export type Project = {
   github: string;
   demo?: string;
   problem: string;
-  architecture: { caption: string };
+  architecture: { diagram: string; caption: string }[];
   features: { title: string; body: string }[];
   stack: { layer: string; tech: string }[];
   apiSurface?: { area: string; endpoints: string }[];
@@ -39,10 +39,13 @@ export const projects: Project[] = [
     github: "https://github.com/Mustain98/stream",
     problem:
       "Most streaming projects are a thin layer over Mediasoup, LiveKit, or Agora, so the interesting part is someone else's code. I wanted to understand how video actually gets from one browser to a hundred others, so I built the media server myself with aiortc. Everything in it is mine: the peer connections, forwarding tracks between them, room lifecycle, signaling, and the preview timers. Doing it that way also meant I could keep payments and passwords completely out of the media server and let a short-lived ticket be the only thing connecting the two halves.",
-    architecture: {
-      caption:
-        "Three services and one database. The media server doesn't know anything about passwords or payments, and the business backend never touches a video packet.",
-    },
+    architecture: [
+      {
+        diagram: "stream",
+        caption:
+          "Three services and one database. The media server doesn't know anything about passwords or payments, and the business backend never touches a video packet.",
+      },
+    ],
     features: [
       {
         title: "Live broadcasting",
@@ -131,10 +134,13 @@ export const projects: Project[] = [
     github: "https://github.com/Mustain98/J_buddy",
     problem:
       "Looking for a job means guessing the right search terms, reading through hundreds of postings, and trying to judge honestly whether you're a fit for each one. It's slow and you have to keep doing it. I wanted to flip that around so the CV does the searching: the system writes its own queries from what's in it, pulls in listings in the background, and ranks them against your real skills. The other half of the problem is trust. An assistant that cheerfully tells you you're qualified for anything is useless, so this one only answers from what your CV actually says.",
-    architecture: {
-      caption:
-        "The API doesn't do any slow work itself. Fetching listings, rebuilding the ranked pool, and the nightly cleanup all get handed to a background worker, which is what keeps the feed quick to load.",
-    },
+    architecture: [
+      {
+        diagram: "j-buddy",
+        caption:
+          "The API doesn't do any slow work itself. Fetching listings, rebuilding the ranked pool, and the nightly cleanup all get handed to a background worker, which is what keeps the feed quick to load.",
+      },
+    ],
     features: [
       {
         title: "Reading your CV",
@@ -206,15 +212,16 @@ export const projects: Project[] = [
     name: "Health Hive",
     tagline: "A health platform where the AI writes the plan and a person decides on it.",
     summary:
-      "A coach you talk to that builds you a plan: a goal, daily habits, calorie targets, and a weekly meal structure. A meal engine turns that into actual daily menus. And when something looks risky, it stops and points you to a real nutritionist or doctor instead of guessing.",
+      "A coach you talk to that builds you a plan: a goal, daily habits, calorie targets, and a weekly meal structure. Behind the chat, a router picks a specialist for each turn and hands it only the tools that specialist should have. Nothing it writes is saved until it passes the safety bounds, and if you turn on approval mode, not until you've approved it item by item.",
     tech: [
       "FastAPI",
       "LangChain",
+      "LangGraph",
       "Groq",
       "pgvector",
       "PostgreSQL",
+      "SSE",
       "Agora",
-      "WebSocket",
       "Next.js",
     ],
     highlights: [
@@ -225,27 +232,39 @@ export const projects: Project[] = [
     github: "https://github.com/Mustain98/Health-Hive",
     demo: "https://health-hive-ten.vercel.app",
     problem:
-      "Health apps each solve one piece of the problem. Your calorie counter doesn't know your goal, your meal planner doesn't know about your medical conditions, and your telehealth app has no idea what you ate this week. You end up juggling four apps that don't talk to each other, and eventually you drop all of them. This one keeps everything in one place. The harder question was safety: bad health advice can genuinely hurt someone, so I built it so the AI can suggest but never decide. Nothing it writes takes effect until you look at it and turn it on, and anything that looks dangerous gets refused and handed to a real professional.",
-    architecture: {
-      caption:
-        "Two APIs on one database, sharing the same login tokens. The core backend owns the schema and is the only place migrations run; the admin API just reads and writes tables that already exist.",
-    },
-    features: [
+      "Health apps each solve one piece of the problem. Your calorie counter doesn't know your goal, your meal planner doesn't know about your medical conditions, and your telehealth app has no idea what you ate this week. You end up juggling four apps that don't talk to each other, and eventually you drop all of them. This one keeps everything in one place. The harder question was safety, and I learned it the expensive way: one real session with an underweight user saved a dangerous weight-loss target while the agent was in the middle of telling them it hadn't. The code had mutated the record before running the risk check and there was nothing to roll it back. That single session is why the whole agent layer got rebuilt — validation now runs before you're ever asked to approve anything, and there's exactly one tool that writes instead of nine.",
+    architecture: [
       {
-        title: "The setup coach",
-        body: "A chatbot that acts like a coach instead of a form. It explains its reasoning and talks things through before it writes anything down, and it only saves when you say yes. It also pulls your health data with tools only when it actually needs it, so an ordinary question never drags your medical history into the prompt.",
+        diagram: "health-hive-topology",
+        caption:
+          "Four deployable apps on one Postgres, sharing the same login tokens. The core backend owns the schema and is the only place migrations run; the admin API just reads and writes tables that already exist. All the AI lives in the core backend.",
       },
       {
-        title: "Changing things by talking",
-        body: "\"Swap my pushups for squats\" updates the goal. \"I want to bulk instead\" recalculates your calorie target and asks you to confirm. Goals, targets, and meal structure can all be created, edited, or deleted from the chat. Sessions get summarized when they close, so the coach can look back at what you discussed before.",
+        diagram: "health-hive-agent",
+        caption:
+          "One agent per turn, not a crowd of them. A keyword router picks the persona and hands it only the tools that persona is allowed to touch, so a question about your weight goal literally cannot reach the meal tools. Every write goes through a single batch tool that validates against the safety bounds before you're asked to approve it — so when a proposal is wrong, the model gets the safe values back and corrects itself in the same turn instead of making you reject it.",
+      },
+    ],
+    features: [
+      {
+        title: "A router, not one giant prompt",
+        body: "Every turn goes through a keyword router first, which picks one of five specialists: milestone, daily goals, nutrition, meals, or a general coach. Picking a specialist doesn't just swap the prompt, it narrows the tools. A turn routed to milestone literally cannot see the meal tools. The router is plain string matching rather than a model call, because it runs on every single turn and the latency would be pure overhead. When it guesses wrong the turn still works, because the coach fallback holds all nine tools.",
+      },
+      {
+        title: "One write tool, checked before you're asked",
+        body: "There are nine tools in total, but only one of them writes: everything the agent wants to change gets batched into a single proposal. That proposal is validated before you ever see it, against real bounds — safe BMI range, a cap on weekly weight change, and a check that the macros actually add up to the calorie target within 8%. If something violates a bound, the error handed back to the model carries the safe values with it, so it corrects itself in the same turn instead of making you reject it and start over.",
+      },
+      {
+        title: "Approve, edit, or reject each item",
+        body: "Approval mode is a per-session toggle. With it on, the agent suspends mid-run and waits: a batch of nine goals unrolls into nine separate decisions rather than one all-or-nothing prompt. Editing isn't a form, it's just a sentence back to the model, which re-proposes a corrected version. What you decided gets written into the transcript, which is what stops it from cheerfully proposing the same rejected thing again next turn.",
+      },
+      {
+        title: "Remembering without paying for it",
+        body: "Long chats get compressed in flight: past 30 messages it summarizes down to the last 10. When a session closes it writes a durable summary, so a later chat can look back at what you discussed weeks ago without replaying the whole transcript. Token usage is counted per session, which is how the cost of all this stays visible rather than being a surprise.",
       },
       {
         title: "Building the meal plan",
-        body: "The LLM works out the constraints for each meal slot: how to split the macros, what goes in a main versus a side, which labels are needed, and any limits your conditions imply, like capping sodium. That gets turned into an embedding and searched against the meal database, and then plain deterministic code picks the combination that actually hits the numbers. If the LLM fails, there's a fallback path, so generation never dies outright.",
-      },
-      {
-        title: "A week, not a calendar",
-        body: "The meal plan is a Monday-to-Sunday template rather than specific dates. If you regenerate days that are already planned, it won't quietly overwrite them; it comes back and tells you which meals would be replaced, and you pick which ones you actually want redone.",
+        body: "One LLM call works out the constraints for each meal slot: how to split the macros, what goes in a main versus a side, which labels are needed, and any limits your conditions imply, like capping sodium. That becomes an embedding searched against the meal database, and then plain deterministic code picks the combination that actually hits the numbers. The model is told about your allergies, but that's advisory only — the real enforcement is a hard filter applied after retrieval. So a hallucinated label costs you a worse meal, never an unsafe one.",
       },
       {
         title: "Nothing goes live on its own",
@@ -267,13 +286,29 @@ export const projects: Project[] = [
         tech: "JWT (python-jose) + Argon2, with user / consultant / admin roles",
       },
       {
-        layer: "AI",
-        tech: "LangChain + Groq (llama-3.3-70b-versatile, gpt-oss-120b as fallback), rotated across up to three keys",
+        layer: "Agent",
+        tech: "LangChain v1 create_agent on LangGraph — one ReAct loop per turn, five specialist personas behind a keyword router",
+      },
+      {
+        layer: "Models",
+        tech: "Groq: llama-3.3-70b-versatile, gpt-oss-120b as fallback, rotated across up to three keys",
+      },
+      {
+        layer: "Agent state",
+        tech: "PostgresSaver checkpointer for approval interrupts, summarization middleware, per-session summaries",
       },
       { layer: "Vector search", tech: "pgvector + Jina embeddings (1024-dim)" },
-      { layer: "Realtime", tech: "Agora video, Server-Sent Events for streaming chat" },
+      {
+        layer: "Realtime",
+        tech: "Agora video, Server-Sent Events for the setup chat (everything else polls)",
+      },
     ],
     apiSurface: [
+      {
+        area: "Setup chat",
+        endpoints:
+          "POST /api/plan-setup/sessions/{id}/messages (SSE) · /resume · PATCH /sessions/{id} {approval_mode}",
+      },
       {
         area: "Meal plans",
         endpoints:

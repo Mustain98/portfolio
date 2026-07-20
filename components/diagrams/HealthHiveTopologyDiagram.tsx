@@ -3,11 +3,12 @@ import { Box, Chip, Edge, EdgeLabel, Frame, Note } from "@/components/diagrams/p
 const ID = "healthhive";
 const ARROW = `${ID}-arrow`;
 
+// exactly 8 — the enclosing Box is hand-sized for four chip rows and will not reflow
 const coreModules = [
   "user",
   "plan",
   "meal",
-  "meal_planner_agent",
+  "agents/",
   "consultant",
   "consultation",
   "appointment",
@@ -23,7 +24,7 @@ const external = [
   "Supabase Storage",
 ];
 
-export function HealthHiveDiagram() {
+export function HealthHiveTopologyDiagram() {
   return (
     <Frame
       id={ID}
@@ -63,7 +64,7 @@ export function HealthHiveDiagram() {
         w={360}
         h={232}
         title="Core Backend"
-        subtitle="FastAPI · modular monolith · owns the schema"
+        subtitle="FastAPI · 12 modules + app/agents · owns the schema"
         accent
       />
       {coreModules.map((label, i) => (

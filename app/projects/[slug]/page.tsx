@@ -95,7 +95,11 @@ export default async function ProjectPage({ params }: Params) {
       </Block>
 
       <Block index="02" title="Architecture">
-        <ArchDiagram slug={project.slug} caption={project.architecture.caption} />
+        <div className="space-y-12">
+          {project.architecture.map((figure) => (
+            <ArchDiagram key={figure.diagram} diagram={figure.diagram} caption={figure.caption} />
+          ))}
+        </div>
       </Block>
 
       <Block index="03" title="What it does">
