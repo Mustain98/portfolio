@@ -38,8 +38,14 @@ export function Hero() {
             {profile.name}
           </h1>
 
+          <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm text-muted">
+            <span className="text-fg">{profile.title}</span>
+            <span className="text-accent">/</span>
+            <span>{profile.location}</span>
+          </p>
+
           {/* the tagline is one string in the data; the pipes become the visual rhythm */}
-          <p className="mt-6 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm leading-relaxed sm:text-base">
+          <p className="mt-5 flex max-w-3xl flex-wrap items-center gap-x-3 gap-y-1 font-mono text-sm leading-relaxed sm:text-base">
             {profile.tagline.split("|").map((part, i) => (
               <span key={part} className="flex items-center gap-3">
                 {i > 0 && <span className="text-accent">|</span>}

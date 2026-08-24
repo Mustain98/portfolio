@@ -104,10 +104,16 @@ export default async function ProjectPage({ params }: Params) {
 
       <Block index="03" title="What it does">
         <div className="grid gap-6 sm:grid-cols-2">
-          {project.features.map((feature) => (
+          {project.features.map((feature, i) => (
             <div
               key={feature.title}
-              className="rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent-dim"
+              className={`rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent-dim${
+                // an odd number of features would leave the last one alone in a
+                // half-width row, so let it fill the row instead
+                i === project.features.length - 1 && project.features.length % 2 === 1
+                  ? " sm:col-span-2"
+                  : ""
+              }`}
             >
               <h3 className="font-medium text-fg">{feature.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted">{feature.body}</p>

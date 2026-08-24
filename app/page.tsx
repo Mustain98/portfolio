@@ -3,6 +3,7 @@ import { Hero } from "@/components/Hero";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Section } from "@/components/Section";
 import { Skills } from "@/components/Skills";
+import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 
 export default function Home() {
@@ -10,9 +11,13 @@ export default function Home() {
     <>
       <Hero />
 
+      <Section id="about" index="01" title="About">
+        <p className="max-w-3xl leading-relaxed text-muted">{profile.overview}</p>
+      </Section>
+
       <Section
         id="projects"
-        index="01"
+        index="02"
         title="Projects"
         subtitle="Three things I built end to end. Each one has a write-up covering how it's put together and the parts that gave me trouble."
       >
@@ -23,13 +28,13 @@ export default function Home() {
         </div>
       </Section>
 
-      <Section id="skills" index="02" title="Skills">
+      <Section id="skills" index="03" title="Skills">
         <Skills />
       </Section>
 
       <Section
         id="contact"
-        index="03"
+        index="04"
         title="Get in touch"
         subtitle="I'm looking for backend, distributed systems, and AI engineering roles. Happy to hear about anything interesting."
       >
